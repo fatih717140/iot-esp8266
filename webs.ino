@@ -1,8 +1,8 @@
 #include <ESP8266WiFi.h>
 #include<ESP8266WebServer.h>
 const int ledPin=5;
-const char* ssid = "TurkTelekom_TP6D7C_2.4GHz";
-const char* password = "Tg3wdphbMrM9";
+const char* ssid = "xxxxx";
+const char* password = "xxxxx";
 
 ESP8266WebServer server(80);
 void setup(){
