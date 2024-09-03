@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>El Tespiti</title>
+    <title>Hand Detection with led on off</title>
     <style>
         #container {
             position: relative;
@@ -28,11 +28,13 @@
         <video id="video" width="640" height="480" autoplay></video>
         <canvas id="overlay" width="640" height="480"></canvas>
     </div>
-    
+
+    <!- Tensorflow js imported ->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose"></script>
 
     <script>
+        // Browser camera is opened with http
         async function setupCamera() {
             const video = document.getElementById('video');
             video.width = 640;
@@ -50,7 +52,7 @@
                 console.error(`${err.name}: ${err.message}`);
             }
         }
-
+     
         async function detectHands() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('overlay');
@@ -62,7 +64,7 @@
 
             // Define the threshold to determine if hand is open
             const openHandThreshold = 50; // Adjust this value as needed
-
+            //model prediction
             function renderPrediction() {
                 model.estimateHands(video).then(predictions => {
                     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -103,7 +105,7 @@
             }
 
             function updateLEDState(isHandOpen) {
-    const esp8266IP = 'http://192.168.1.101'; // ESP8266 IP adresi
+    const esp8266IP = 'http://192.168.1.101'; // ESP8266 IP adress
     const endpoint = isHandOpen ? '/led/on' : '/led/off';
     fetch(esp8266IP + endpoint, { mode: 'no-cors' })
         .then(response => response.text())
