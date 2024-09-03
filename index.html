@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Tespiti</title>
+    <style>
+        #container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+        }
+        #video, #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #video {
+            z-index: 1;
+        }
+        #overlay {
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <video id="video" width="640" height="480" autoplay></video>
+        <canvas id="overlay" width="640" height="480"></canvas>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose"></script>
+
+    <script>
+        async function setupCamera() {
+            const video = document.getElementById('video');
+            video.width = 640;
+            video.height = 480;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                };
+            } catch (err) {
+                console.error(`${err.name}: ${err.message}`);
+            }
+        }
+
+        async function detectHands() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('overlay');
+            const context = canvas.getContext('2d');
+
+            // Load the handpose model
+            const model = await handpose.load();
+            console.log('Handpose model loaded');
+
+            // Define the threshold to determine if hand is open
+            const openHandThreshold = 50; // Adjust this value as needed
+
+            function renderPrediction() {
+                model.estimateHands(video).then(predictions => {
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (predictions.length > 0) {
+                        for (let i = 0; i < predictions.length; i++) {
+                            const prediction = predictions[i];
+                            const landmarks = prediction.landmarks;
+
+                            // Draw landmarks
+                            for (let j = 0; j < landmarks.length; j++) {
+                                const [x, y, z] = landmarks[j];
+                                context.beginPath();
+                                context.arc(x, y, 5, 0, 2 * Math.PI);
+                                context.fillStyle = 'red';
+                                context.fill();
+                            }
+
+                            // Check if the hand is open
+                            const isHandOpen = checkIfHandOpen(landmarks);
+                            updateLEDState(isHandOpen);
+                        }
+                    }
+
+                    requestAnimationFrame(renderPrediction);
+                }).catch(err => {
+                    console.error('Error during hand detection:', err);
+                });
+            }
+
+            function checkIfHandOpen(landmarks) {
+                const distanceBetweenThumbAndIndex = Math.sqrt(
+                    Math.pow(landmarks[4][0] - landmarks[8][0], 2) +
+                    Math.pow(landmarks[4][1] - landmarks[8][1], 2)
+                );
+
+                return distanceBetweenThumbAndIndex > openHandThreshold;
+            }
+
+            function updateLEDState(isHandOpen) {
+    const esp8266IP = 'http://192.168.1.101'; // ESP8266 IP adresi
+    const endpoint = isHandOpen ? '/led/on' : '/led/off';
+    fetch(esp8266IP + endpoint, { mode: 'no-cors' })
+        .then(response => response.text())
+        .then(data => console.log('LED state updated:', data))
+        .catch(error => console.error('Error updating LED state:', error));
+}
+
+            renderPrediction();
+        }
+
+        window.onload = async () => {
+            await setupCamera();
+            await detectHands();
+        }
+    </script>
+</body>
+</html>
